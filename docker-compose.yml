@@ -1,14 +1,6 @@
 version: "3.8"
 
 services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
   server:
     build: ./server
     restart: unless-stopped
@@ -17,12 +9,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      MONGO_URI: mongodb://mongo:27017/talenthire
+      MONGO_URI: ${MONGO_URI}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_ACCESS_EXPIRES: 15m
       JWT_REFRESH_EXPIRES: 7d
-      CLIENT_URL: http://localhost:5173
+      CLIENT_URL: ${CLIENT_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       SMTP_HOST: ${SMTP_HOST}
@@ -42,6 +34,14 @@ services:
       - "80:80"
     depends_on:
       - server
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
 
 volumes:
   mongo_data:
