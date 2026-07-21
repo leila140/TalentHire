@@ -1,0 +1,15 @@
+{
+  "name": "talenthire",
+  "version": "1.0.0",
+  "description": "TalentAI - AI Recruitment Platform",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "cd server && npm install && npm run build",
+    "start": "cd server && npm start"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
