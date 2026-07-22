@@ -25,7 +25,7 @@ import { logActivity } from "./activity.controller";
 const cookieOptions = {
   httpOnly: true,
   secure: env.nodeEnv === "production",
-  sameSite: "lax" as const,
+  sameSite: "none" as const,
   path: "/",
 };
 

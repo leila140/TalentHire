@@ -16,7 +16,15 @@ const refreshApi = axios.create({
   withCredentials: true,
 });
 
-const TOKEN_KEY = "accessToken";
+const TOKEN_KEY = "talenthire_access_token";
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 api.interceptors.response.use(
   (res) => res,
