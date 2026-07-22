@@ -15,7 +15,11 @@ export const ConversationsPage = () => {
   const conversations = data?.data || [];
 
   const getOtherParticipant = (conv: Conversation): Participant | undefined =>
-    conv.participants.find((p) => p._id !== user?.id);
+    conv.participants.find((p) => {
+      const pid = String(p._id);
+      const uid = String(user?.id || (user as any)?._id || "");
+      return pid !== uid;
+    });
 
   if (isLoading) return <PageLoader />;
   if (isError) return <p className="text-center text-red-500 dark:text-red-400">{t("common.error")}</p>;
