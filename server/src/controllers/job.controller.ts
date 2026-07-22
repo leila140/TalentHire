@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Job } from "@models/Job";
 import { Company } from "@models/Company";
-import { createJobSchema, updateJobSchema } from "@validators/job.validator";
 import { AppError } from "@middlewares/errorHandler";
 import { logActivity } from "./activity.controller";
 import { escapeRegex, parsePagination } from "@utils/helpers";
@@ -9,11 +8,10 @@ import { cascadeDeleteJob } from "@utils/cascade";
 
 export const createJob = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const input = createJobSchema.parse(req.body);
     const company = await Company.findOne({ createdBy: req.user!.id });
     if (!company) throw new AppError("You must create a company first", 400);
 
-    const job = await Job.create({ ...input, company: company.id, createdBy: req.user!.id });
+    const job = await Job.create({ ...req.body, company: company.id, createdBy: req.user!.id });
     logActivity(req.user!.id, "job_create", "job", job.id, { title: job.title }, req.ip as string);
     res.status(201).json({ success: true, data: job });
   } catch (error) {
@@ -33,10 +31,9 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
 
 export const updateJob = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const input = updateJobSchema.parse(req.body);
     const job = await Job.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.user!.id },
-      input,
+      req.body,
       { new: true, runValidators: true }
     );
     if (!job) throw new AppError("Job not found", 404);

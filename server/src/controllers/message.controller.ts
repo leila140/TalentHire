@@ -39,9 +39,16 @@ export const getMyConversations = async (req: Request, res: Response, next: Next
       Conversation.countDocuments({ participants: req.user!.id }),
     ]);
 
+    const conversationsWithOther = conversations.map((conv) => ({
+      ...conv.toObject(),
+      otherParticipant: conv.participants.find(
+        (p) => String(p._id) !== req.user!.id
+      ),
+    }));
+
     res.status(200).json({
       success: true,
-      data: conversations,
+      data: conversationsWithOther,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {

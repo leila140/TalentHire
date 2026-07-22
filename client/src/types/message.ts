@@ -8,6 +8,7 @@ export interface Participant {
 export interface Conversation {
   _id: string;
   participants: Participant[];
+  otherParticipant?: Participant;
   lastMessage?: string;
   lastMessageAt?: string;
   createdAt: string;

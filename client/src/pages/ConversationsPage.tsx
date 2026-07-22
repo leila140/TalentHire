@@ -1,25 +1,15 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuthStore } from "@/store/authStore";
 import { useConversations } from "@/hooks/useMessages";
 import { PageLoader } from "@/components/PageLoader";
 import { EmptyState } from "@/components/EmptyState";
 import { Badge } from "@/components/ui/badge";
-import type { Conversation, Participant } from "@/types/message";
 
 export const ConversationsPage = () => {
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
   const { data, isLoading, isError } = useConversations();
 
   const conversations = data?.data || [];
-
-  const getOtherParticipant = (conv: Conversation): Participant | undefined =>
-    conv.participants.find((p) => {
-      const pid = String(p._id);
-      const uid = String(user?.id || (user as any)?._id || "");
-      return pid !== uid;
-    });
 
   if (isLoading) return <PageLoader />;
   if (isError) return <p className="text-center text-red-500 dark:text-red-400">{t("common.error")}</p>;
@@ -39,7 +29,7 @@ export const ConversationsPage = () => {
       ) : (
         <div className="space-y-2">
           {conversations.map((conv) => {
-            const other = getOtherParticipant(conv);
+            const other = conv.otherParticipant;
             return (
               <Link
                 key={conv._id}
