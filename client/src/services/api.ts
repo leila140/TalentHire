@@ -22,7 +22,7 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && !original._retry && !original.url?.includes("/auth/me")) {
       original._retry = true;
       try {
         await refreshApi.post("/auth/refresh");
