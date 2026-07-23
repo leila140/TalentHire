@@ -7,12 +7,48 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
 import { useToastStore } from "@/store/toastStore";
 
-const schema = z.object({
-  fullName: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  role: z.enum(["candidate", "recruiter"]),
+const companySchema = z.object({
+  companyName: z.string().min(2, "Company name must be at least 2 characters"),
+  companyDescription: z.string().min(10, "Description must be at least 10 characters"),
+  companyIndustry: z.string().min(1, "Industry is required"),
+  companyEmployees: z.coerce.number().min(1, "At least 1 employee required"),
+  companyLocation: z.string().min(1, "Location is required"),
+  companyWebsite: z.string().url("Invalid URL").optional().or(z.literal("")),
 });
+
+const schema = z
+  .object({
+    fullName: z.string().min(2),
+    email: z.string().email(),
+    password: z.string().min(8),
+    role: z.enum(["candidate", "recruiter"]),
+    companyName: z.string().optional(),
+    companyDescription: z.string().optional(),
+    companyIndustry: z.string().optional(),
+    companyEmployees: z.coerce.number().optional(),
+    companyLocation: z.string().optional(),
+    companyWebsite: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.role === "recruiter") {
+        return (
+          data.companyName &&
+          data.companyName.length >= 2 &&
+          data.companyDescription &&
+          data.companyDescription.length >= 10 &&
+          data.companyIndustry &&
+          data.companyIndustry.length > 0 &&
+          data.companyEmployees &&
+          data.companyEmployees >= 1 &&
+          data.companyLocation &&
+          data.companyLocation.length > 0
+        );
+      }
+      return true;
+    },
+    { message: "Company information is required for recruiters", path: ["companyName"] }
+  );
 
 type FormData = z.infer<typeof schema>;
 
@@ -25,12 +61,33 @@ export const RegisterPage = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { role: "candidate" } });
 
+  const selectedRole = watch("role");
+
   const onSubmit = async (data: FormData) => {
     try {
-      await registerUser(data);
+      const payload: any = {
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+      };
+
+      if (data.role === "recruiter") {
+        payload.company = {
+          name: data.companyName,
+          description: data.companyDescription,
+          industry: data.companyIndustry,
+          employees: data.companyEmployees,
+          location: data.companyLocation,
+          website: data.companyWebsite || undefined,
+        };
+      }
+
+      await registerUser(payload);
       navigate("/dashboard");
     } catch (err: any) {
       toast("error", err.response?.data?.message || "Registration failed");
@@ -103,6 +160,75 @@ export const RegisterPage = () => {
                 <option value="recruiter">{t("auth.register.roleRecruiter")}</option>
               </select>
             </div>
+
+            {selectedRole === "recruiter" && (
+              <>
+                <div className="border-t border-violet-100 dark:border-violet-900/30 pt-4">
+                  <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-gray-200">Company Information</p>
+                </div>
+                <div>
+                  <input
+                    {...register("companyName")}
+                    placeholder="Company name"
+                    className="w-full rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-violet-900/30 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-violet-500 dark:focus:bg-gray-800"
+                  />
+                  {errors.companyName && <p className="mt-1 text-sm text-red-500">{errors.companyName.message}</p>}
+                </div>
+                <div>
+                  <textarea
+                    {...register("companyDescription")}
+                    rows={3}
+                    placeholder="Tell candidates about your company..."
+                    className="w-full rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-violet-900/30 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-violet-500 dark:focus:bg-gray-800"
+                  />
+                  {errors.companyDescription && <p className="mt-1 text-sm text-red-500">{errors.companyDescription.message}</p>}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <select
+                      {...register("companyIndustry")}
+                      className="w-full rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-violet-900/30 dark:bg-gray-800 dark:text-white dark:focus:border-violet-500 dark:focus:bg-gray-800"
+                    >
+                      <option value="">Industry</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Healthcare">Healthcare</option>
+                      <option value="Education">Education</option>
+                      <option value="E-commerce">E-commerce</option>
+                      <option value="Consulting">Consulting</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {errors.companyIndustry && <p className="mt-1 text-sm text-red-500">{errors.companyIndustry.message}</p>}
+                  </div>
+                  <div>
+                    <input
+                      {...register("companyEmployees")}
+                      type="number"
+                      placeholder="Employees"
+                      className="w-full rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-violet-900/30 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-violet-500 dark:focus:bg-gray-800"
+                    />
+                    {errors.companyEmployees && <p className="mt-1 text-sm text-red-500">{errors.companyEmployees.message}</p>}
+                  </div>
+                </div>
+                <div>
+                  <input
+                    {...register("companyLocation")}
+                    placeholder="Location (e.g. New York, NY)"
+                    className="w-full rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-violet-900/30 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-violet-500 dark:focus:bg-gray-800"
+                  />
+                  {errors.companyLocation && <p className="mt-1 text-sm text-red-500">{errors.companyLocation.message}</p>}
+                </div>
+                <div>
+                  <input
+                    {...register("companyWebsite")}
+                    placeholder="Website (optional)"
+                    className="w-full rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-violet-900/30 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-violet-500 dark:focus:bg-gray-800"
+                  />
+                  {errors.companyWebsite && <p className="mt-1 text-sm text-red-500">{errors.companyWebsite.message}</p>}
+                </div>
+              </>
+            )}
+
             <button
               disabled={isSubmitting}
               className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 disabled:opacity-60"

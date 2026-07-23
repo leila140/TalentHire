@@ -15,6 +15,14 @@ interface AuthState {
     email: string;
     password: string;
     role: "candidate" | "recruiter";
+    company?: {
+      name: string;
+      description: string;
+      industry: string;
+      employees: number;
+      location: string;
+      website?: string;
+    };
   }) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;

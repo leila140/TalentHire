@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { User } from "@models/User";
+import { Company } from "@models/Company";
 import { env } from "@config/env";
 import { AppError } from "@middlewares/errorHandler";
 import { RegisterInput, LoginInput } from "@validators/auth.validator";
@@ -37,6 +38,20 @@ export const registerUser = async (input: RegisterInput) => {
     role: input.role,
     verificationToken: verificationTokenHash,
   });
+
+  if (input.role === "recruiter" && input.company) {
+    const company = await Company.create({
+      name: input.company.name,
+      description: input.company.description,
+      industry: input.company.industry,
+      employees: input.company.employees,
+      location: input.company.location,
+      website: input.company.website || "",
+      createdBy: user.id,
+    });
+    user.company = company.id;
+    await user.save();
+  }
 
   const tokens = generateTokens(user.id, user.role);
   user.refreshToken = tokens.refreshToken;
