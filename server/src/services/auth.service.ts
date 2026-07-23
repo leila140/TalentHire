@@ -47,6 +47,7 @@ export const registerUser = async (input: RegisterInput) => {
       employees: input.company.employees,
       location: input.company.location,
       website: input.company.website || "",
+      isApproved: true,
       createdBy: user.id,
     });
     user.company = company.id;
